@@ -30,11 +30,16 @@ pipeline {
         stage('Code Quality') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh '''
-                        ./mvnw sonar:sonar \
-                        -Dsonar.projectKey=event-booking \
-                        -Dsonar.projectName=event-booking
-                    '''
+                    withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+
+                        sh '''
+                            ./mvnw sonar:sonar \
+                            -Dsonar.projectKey=event-booking \
+                            -Dsonar.projectName=event-booking \
+                            -Dsonar.token=$SONAR_TOKEN
+                        '''
+
+                    }
                 }
             }
         }
