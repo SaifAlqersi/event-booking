@@ -36,7 +36,7 @@ pipeline {
                             ./mvnw sonar:sonar \
                             -Dsonar.projectKey=event-booking \
                             -Dsonar.projectName=event-booking \
-                            -Dsonar.token=$SONAR_TOKEN
+                            -Dsonar.login=$SONAR_TOKEN
                         '''
 
                     }
