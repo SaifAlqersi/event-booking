@@ -24,9 +24,11 @@
         <jacoco.version>0.8.13</jacoco.version>
     </properties>
 
+
     <dependencies>
 
         <!-- application -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
@@ -47,14 +49,18 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+
         <!-- database -->
+
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
 
+
         <!-- development -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
@@ -62,13 +68,16 @@
             <optional>true</optional>
         </dependency>
 
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
 
+
         <!-- testing -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -93,28 +102,45 @@
             <scope>test</scope>
         </dependency>
 
+
     </dependencies>
 
+
     <build>
+
         <plugins>
+
+
+            <!-- Spring Boot -->
 
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
+
+            <!-- Compiler -->
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+
                 <configuration>
                     <annotationProcessorPaths>
+
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                         </path>
+
                     </annotationProcessorPaths>
                 </configuration>
+
             </plugin>
+
+
+            <!-- JaCoCo Coverage -->
+
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -124,28 +150,41 @@
 
                     <execution>
                         <id>prepare-agent</id>
+
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+
                     </execution>
+
 
                     <execution>
                         <id>report</id>
                         <phase>verify</phase>
+
                         <goals>
                             <goal>report</goal>
                         </goals>
+
                     </execution>
 
                 </executions>
+
             </plugin>
+
+
+            <!-- SonarQube Analysis -->
+
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
                 <version>5.0.0.4389</version>
             </plugin>
 
+
         </plugins>
+
     </build>
+
 
 </project>
