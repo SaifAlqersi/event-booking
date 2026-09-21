@@ -27,6 +27,17 @@ pipeline {
                 sh './mvnw test'
             }
         }
+        stage('Code Quality') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh '''
+                        ./mvnw sonar:sonar \
+                        -Dsonar.projectKey=event-booking \
+                        -Dsonar.projectName=event-booking
+                    '''
+                }
+            }
+        }
 
         stage('Package') {
             steps {
