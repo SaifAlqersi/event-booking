@@ -72,28 +72,32 @@ pipeline {
             }
         }
         stage('Deploy') {
+
             steps {
+
                 sh '''
-                    echo "Deploying event-booking to test environment..."
+                echo "Deploying event-booking to staging environment..."
 
-                    docker rm -f event-booking-staging 2>/dev/null || true
+                docker rm -f event-booking-staging 2>/dev/null || true
 
-                    docker run -d \
-                        --name event-booking-staging \
-                        --network event-booking-network \
-                        -p 8082:8080 \
-                        -e SPRING_DATASOURCE_URL=jdbc:postgresql://event-booking-postgres:5432/eventbooking \
-                        -e SPRING_DATASOURCE_USERNAME=eventuser \
-                        -e SPRING_DATASOURCE_PASSWORD=eventpass \
-                        -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
-                        event-booking:${BUILD_NUMBER}
+                docker run -d \
+                    --name event-booking-staging \
+                    --network event-booking_default \
+                    -p 8082:8080 \
+                    -e SPRING_DATASOURCE_URL=jdbc:postgresql://event-booking-postgres:5432/eventbooking \
+                    -e SPRING_DATASOURCE_USERNAME=eventuser \
+                    -e SPRING_DATASOURCE_PASSWORD=eventpass \
+                    -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
+                    event-booking:${BUILD_NUMBER}
 
-                    echo "Waiting for staging application..."
-                    sleep 15
 
-                    docker ps --filter name=event-booking-staging
+                echo "Waiting for application startup..."
 
-                    docker inspect -f '{{.State.Running}}' event-booking-staging | grep true
+                sleep 20
+
+                docker ps --filter name=event-booking-staging
+
+                docker logs --tail 50 event-booking-staging
                 '''
             }
         }
