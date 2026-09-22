@@ -153,7 +153,7 @@ pipeline {
 
                 sleep 10
 
-                curl -f http://localhost:8083/actuator/health
+                curl -f http://event-booking-production:8080/actuator/health
 
                 echo "Production health check passed."
                 '''
