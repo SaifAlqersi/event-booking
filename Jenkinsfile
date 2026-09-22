@@ -140,6 +140,21 @@ pipeline {
                 '''
             }
         }
+        stage('Monitoring Verification') {
+
+            steps {
+
+                sh '''
+                echo "Checking production health..."
+
+                sleep 10
+
+                curl -f http://localhost:8083/actuator/health
+
+                echo "Production health check passed."
+                '''
+            }
+        }
     }
     
 

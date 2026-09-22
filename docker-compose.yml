@@ -5,9 +5,9 @@ services:
     container_name: event-booking-postgres
 
     environment:
-      POSTGRES_DB: ${DB_NAME:-eventbooking}
-      POSTGRES_USER: ${DB_USERNAME:-eventuser}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-eventpass}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -16,7 +16,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${DB_USERNAME:-eventuser} -d ${DB_NAME:-eventbooking}"
+          "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"
         ]
       interval: 10s
       timeout: 5s
@@ -26,35 +26,59 @@ services:
 
 
   app:
-    image: event-booking:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    image: event-booking:${APP_VERSION:-local}
 
     container_name: event-booking-app
 
     environment:
-
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-eventbooking}
-      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-eventuser}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-eventpass}
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
 
       SERVER_PORT: 8080
 
-      SPRING_JPA_HIBERNATE_DDL_AUTO: ${JPA_DDL_AUTO:-update}
-      SPRING_JPA_SHOW_SQL: ${JPA_SHOW_SQL:-false}
-      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: ${JPA_FORMAT_SQL:-false}
+      JPA_DDL_AUTO: ${JPA_DDL_AUTO:-update}
+      JPA_SHOW_SQL: ${JPA_SHOW_SQL:-false}
+      JPA_FORMAT_SQL: ${JPA_FORMAT_SQL:-false}
 
-      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+      HEALTH_SHOW_DETAILS: ${HEALTH_SHOW_DETAILS:-always}
 
     ports:
       - "${SERVER_PORT:-8080}:8080"
-
 
     depends_on:
       postgres:
         condition: service_healthy
 
-
     restart: unless-stopped
 
+
+  prometheus:
+    image: prom/prometheus
+
+    container_name: event-booking-prometheus
+
+    ports:
+      - "9090:9090"
+
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+
+  grafana:
+    image: grafana/grafana
+
+    container_name: event-booking-grafana
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      - prometheus
 
 
 volumes:
