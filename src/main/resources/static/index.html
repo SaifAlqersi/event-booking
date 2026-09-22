@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Event Booking System">
+    <title>Evently | Discover & Book Events</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<header class="navbar">
+    <div class="container nav-content">
+        <button class="brand" onclick="showHome()">
+            <span class="brand-icon">E</span>
+            <span>Evently</span>
+        </button>
+
+        <nav>
+            <button class="nav-link active" id="homeNav" onclick="showHome()">Explore</button>
+            <button class="nav-link" id="bookingsNav" onclick="showBookings()">My Bookings</button>
+        </nav>
+
+        <button class="create-event-btn" onclick="openEventModal()">
+            <span>＋</span>
+            Create Event
+        </button>
+    </div>
+</header>
+
+
+<main>
+
+    <!-- HOME -->
+    <section id="homePage">
+
+        <section class="hero">
+            <div class="hero-glow hero-glow-one"></div>
+            <div class="hero-glow hero-glow-two"></div>
+
+            <div class="container hero-content">
+                <span class="hero-badge">DISCOVER. CONNECT. EXPERIENCE.</span>
+
+                <h1>
+                    Find experiences<br>
+                    <span>worth remembering.</span>
+                </h1>
+
+                <p>
+                    Discover technology, business and innovation events
+                    across Australia and the Gulf.
+                </p>
+
+                <div class="search-box">
+                    <div class="search-field">
+                        <span class="search-icon">⌕</span>
+                        <input
+                                id="searchInput"
+                                type="text"
+                                placeholder="Search events..."
+                                oninput="filterEvents()">
+                    </div>
+
+                    <select id="locationFilter" onchange="filterEvents()">
+                        <option value="">All locations</option>
+                        <option value="Australia">Australia</option>
+                        <option value="UAE">United Arab Emirates</option>
+                        <option value="Saudi Arabia">Saudi Arabia</option>
+                        <option value="Qatar">Qatar</option>
+                    </select>
+
+                    <button onclick="filterEvents()">Search Events</button>
+                </div>
+            </div>
+        </section>
+
+
+        <section class="events-section">
+            <div class="container">
+
+                <div class="section-heading">
+                    <div>
+                        <span class="eyebrow">UPCOMING EXPERIENCES</span>
+                        <h2>Events you'll love</h2>
+                    </div>
+
+                    <div class="event-count">
+                        <span id="eventCount">0</span> events
+                    </div>
+                </div>
+
+                <div id="eventsGrid" class="events-grid"></div>
+
+                <div id="eventsLoading" class="state-box">
+                    <div class="loader"></div>
+                    <p>Loading upcoming events...</p>
+                </div>
+
+                <div id="eventsEmpty" class="state-box hidden">
+                    <div class="empty-icon">⌕</div>
+                    <h3>No events found</h3>
+                    <p>Try changing your search or location filter.</p>
+                </div>
+
+            </div>
+        </section>
+
+    </section>
+
+
+    <!-- BOOKINGS -->
+    <section id="bookingsPage" class="page hidden">
+        <div class="container">
+
+            <div class="page-header">
+                <div>
+                    <span class="eyebrow">YOUR EXPERIENCES</span>
+                    <h1>My Bookings</h1>
+                    <p>Search and manage your event reservations.</p>
+                </div>
+            </div>
+
+            <div class="booking-search-card">
+                <div>
+                    <label for="bookingEmail">Email address</label>
+                    <div class="email-search">
+                        <input
+                                id="bookingEmail"
+                                type="email"
+                                placeholder="Enter the email used for booking">
+                        <button onclick="searchBookings()">Find Bookings</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bookingsGrid" class="bookings-grid"></div>
+
+            <div id="bookingsWelcome" class="state-box bookings-state">
+                <div class="empty-icon">✓</div>
+                <h3>Find your bookings</h3>
+                <p>Enter the email address you used when making your reservation.</p>
+            </div>
+
+        </div>
+    </section>
+
+</main>
+
+
+<!-- BOOKING MODAL -->
+<div id="bookingModal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeBookingModal()"></div>
+
+    <div class="modal-card">
+
+        <button class="modal-close" onclick="closeBookingModal()">×</button>
+
+        <div class="modal-heading">
+            <span class="eyebrow">RESERVE YOUR SPOT</span>
+            <h2>Book Event</h2>
+            <p id="bookingEventName"></p>
+        </div>
+
+        <div class="selected-event-summary">
+            <div>
+                <span>Date</span>
+                <strong id="bookingEventDate"></strong>
+            </div>
+
+            <div>
+                <span>Location</span>
+                <strong id="bookingEventLocation"></strong>
+            </div>
+
+            <div>
+                <span>Available</span>
+                <strong id="bookingEventSeats"></strong>
+            </div>
+        </div>
+
+        <form id="bookingForm" onsubmit="submitBooking(event)">
+            <input type="hidden" id="bookingEventId">
+
+            <div class="form-group">
+                <label for="customerName">Full name</label>
+                <input
+                        id="customerName"
+                        type="text"
+                        maxlength="120"
+                        placeholder="Your full name"
+                        required>
+            </div>
+
+            <div class="form-group">
+                <label for="customerEmail">Email address</label>
+                <input
+                        id="customerEmail"
+                        type="email"
+                        maxlength="180"
+                        placeholder="you@example.com"
+                        required>
+            </div>
+
+            <div class="form-group">
+                <label for="ticketQuantity">Number of tickets</label>
+                <input
+                        id="ticketQuantity"
+                        type="number"
+                        min="1"
+                        value="1"
+                        required>
+            </div>
+
+            <button id="bookingSubmit" class="primary-action" type="submit">
+                Confirm Booking
+            </button>
+        </form>
+
+    </div>
+</div>
+
+
+<!-- CREATE EVENT MODAL -->
+<div id="eventModal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeEventModal()"></div>
+
+    <div class="modal-card event-modal-card">
+
+        <button class="modal-close" onclick="closeEventModal()">×</button>
+
+        <div class="modal-heading">
+            <span class="eyebrow">EVENT MANAGEMENT</span>
+            <h2>Create New Event</h2>
+            <p>Add a new experience to the platform.</p>
+        </div>
+
+        <form id="eventForm" onsubmit="submitEvent(event)">
+
+            <div class="form-group">
+                <label for="eventTitle">Event title</label>
+                <input
+                        id="eventTitle"
+                        maxlength="150"
+                        placeholder="e.g. Sydney Technology Conference"
+                        required>
+            </div>
+
+            <div class="form-group">
+                <label for="eventDescription">Description</label>
+                <textarea
+                        id="eventDescription"
+                        maxlength="1000"
+                        rows="4"
+                        placeholder="Tell people what this event is about..."></textarea>
+            </div>
+
+            <div class="form-row">
+
+                <div class="form-group">
+                    <label for="eventLocation">Location</label>
+                    <input
+                            id="eventLocation"
+                            maxlength="200"
+                            placeholder="Sydney, Australia"
+                            required>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventDate">Date & time</label>
+                    <input
+                            id="eventDate"
+                            type="datetime-local"
+                            required>
+                </div>
+
+            </div>
+
+            <div class="form-group">
+                <label for="eventSeats">Total seats</label>
+                <input
+                        id="eventSeats"
+                        type="number"
+                        min="1"
+                        placeholder="100"
+                        required>
+            </div>
+
+            <button id="eventSubmit" class="primary-action" type="submit">
+                Create Event
+            </button>
+
+        </form>
+
+    </div>
+</div>
+
+
+<!-- SUCCESS MODAL -->
+<div id="successModal" class="modal hidden">
+    <div class="modal-overlay"></div>
+
+    <div class="modal-card success-card">
+        <div class="success-mark">✓</div>
+
+        <h2 id="successTitle">Booking confirmed!</h2>
+
+        <p id="successMessage">
+            Your reservation has been successfully created.
+        </p>
+
+        <button class="primary-action" onclick="closeSuccessModal()">
+            Continue
+        </button>
+    </div>
+</div>
+
+
+<div id="toast" class="toast"></div>
+
+
+<footer>
+    <div class="container footer-content">
+        <div class="brand footer-brand">
+            <span class="brand-icon">E</span>
+            <span>Evently</span>
+        </div>
+
+        <p>Event Booking System · Spring Boot & PostgreSQL</p>
+
+        <span class="system-status">
+            <i></i>
+            System Online
+        </span>
+    </div>
+</footer>
+
+
+<script src="/app.js"></script>
+
+</body>
+</html>
