@@ -71,23 +71,24 @@ pipeline {
                 }
             }
         }
-    }
-    
-    stage('Deploy') {
+        stage('Deploy') {
 
-        steps {
+            steps {
 
-            sh '''
-            docker compose down || true
+                sh '''
+                docker compose down || true
 
-            docker compose up -d
+                docker compose up -d
 
-            docker ps
-            '''
+                docker ps
+                '''
+
+            }
 
         }
-
     }
+    
+
 
     post {
         always {
