@@ -101,6 +101,45 @@ pipeline {
                 '''
             }
         }
+        stage('Release') {
+            steps {
+                sh '''
+                    echo "Creating production release..."
+
+                    RELEASE_VERSION="release-${BUILD_NUMBER}"
+
+                    echo "Release version: ${RELEASE_VERSION}"
+
+                    docker tag \
+                        event-booking:${BUILD_NUMBER} \
+                        event-booking:${RELEASE_VERSION}
+
+                    docker rm -f event-booking-production 2>/dev/null || true
+
+                    docker run -d \
+                        --name event-booking-production \
+                        --network event-booking_default \
+                        -p 8083:8080 \
+                        -e SPRING_DATASOURCE_URL=jdbc:postgresql://event-booking-postgres:5432/eventbooking \
+                        -e SPRING_DATASOURCE_USERNAME=eventuser \
+                        -e SPRING_DATASOURCE_PASSWORD=eventpass \
+                        -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
+                        -e SPRING_PROFILES_ACTIVE=production \
+                        event-booking:${RELEASE_VERSION}
+
+                    echo "Waiting for production application..."
+                    sleep 20
+
+                    docker ps --filter name=event-booking-production
+
+                    docker inspect \
+                        -f '{{.State.Running}}' \
+                        event-booking-production | grep true
+
+                    echo "Production release ${RELEASE_VERSION} deployed successfully."
+                '''
+            }
+        }
     }
     
 
