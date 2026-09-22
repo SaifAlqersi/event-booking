@@ -5,9 +5,9 @@ services:
     container_name: event-booking-postgres
 
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-eventbooking}
+      POSTGRES_USER: ${DB_USERNAME:-eventuser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-eventpass}
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -16,7 +16,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"
+          "pg_isready -U ${DB_USERNAME:-eventuser} -d ${DB_NAME:-eventbooking}"
         ]
       interval: 10s
       timeout: 5s
@@ -26,36 +26,37 @@ services:
 
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-
-    image: event-booking:${APP_VERSION:-local}
+    image: event-booking:latest
 
     container_name: event-booking-app
 
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
+
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-eventbooking}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-eventuser}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-eventpass}
 
       SERVER_PORT: 8080
 
-      JPA_DDL_AUTO: ${JPA_DDL_AUTO:-update}
-      JPA_SHOW_SQL: ${JPA_SHOW_SQL:-false}
-      JPA_FORMAT_SQL: ${JPA_FORMAT_SQL:-false}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${JPA_DDL_AUTO:-update}
+      SPRING_JPA_SHOW_SQL: ${JPA_SHOW_SQL:-false}
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: ${JPA_FORMAT_SQL:-false}
 
-      HEALTH_SHOW_DETAILS: ${HEALTH_SHOW_DETAILS:-always}
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
 
     ports:
       - "${SERVER_PORT:-8080}:8080"
+
 
     depends_on:
       postgres:
         condition: service_healthy
 
+
     restart: unless-stopped
 
 
+
 volumes:
+
   postgres_data:
