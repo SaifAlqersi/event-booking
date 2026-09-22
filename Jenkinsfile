@@ -27,18 +27,17 @@ pipeline {
                 sh './mvnw test'
             }
         }
+
         stage('Code Quality') {
             steps {
                 withSonarQubeEnv('SonarQube') {
                     withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
-
                         sh '''
                             ./mvnw sonar:sonar \
                             -Dsonar.projectKey=event-booking \
                             -Dsonar.projectName=event-booking \
                             -Dsonar.login=$SONAR_TOKEN
                         '''
-
                     }
                 }
             }
@@ -54,6 +53,22 @@ pipeline {
             steps {
                 sh 'docker build -t event-booking:${BUILD_NUMBER} .'
                 sh 'docker tag event-booking:${BUILD_NUMBER} event-booking:latest'
+            }
+        }
+
+        stage('Security Scan') {
+            steps {
+                withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
+                    sh '''
+                        docker run --rm \
+                        --entrypoint snyk \
+                        -e SNYK_TOKEN=$SNYK_TOKEN \
+                        -v "$WORKSPACE:/project" \
+                        -w /project \
+                        snyk/snyk:maven-3-jdk-21 \
+                        test --file=pom.xml
+                    '''
+                }
             }
         }
     }
