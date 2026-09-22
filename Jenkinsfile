@@ -72,19 +72,30 @@ pipeline {
             }
         }
         stage('Deploy') {
-
             steps {
-
                 sh '''
-                docker compose down || true
+                    echo "Deploying event-booking to test environment..."
 
-                docker compose up -d
+                    docker rm -f event-booking-staging 2>/dev/null || true
 
-                docker ps
+                    docker run -d \
+                        --name event-booking-staging \
+                        --network event-booking-network \
+                        -p 8082:8080 \
+                        -e SPRING_DATASOURCE_URL=jdbc:postgresql://event-booking-postgres:5432/eventbooking \
+                        -e SPRING_DATASOURCE_USERNAME=eventuser \
+                        -e SPRING_DATASOURCE_PASSWORD=eventpass \
+                        -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
+                        event-booking:${BUILD_NUMBER}
+
+                    echo "Waiting for staging application..."
+                    sleep 15
+
+                    docker ps --filter name=event-booking-staging
+
+                    docker inspect -f '{{.State.Running}}' event-booking-staging | grep true
                 '''
-
             }
-
         }
     }
     
