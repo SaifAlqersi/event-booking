@@ -61,12 +61,12 @@ pipeline {
                 withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
                     sh '''
                         docker run --rm \
-                        --entrypoint snyk \
-                        -e SNYK_TOKEN=$SNYK_TOKEN \
-                        -v "$WORKSPACE:/project" \
-                        -w /project \
-                        snyk/snyk:maven-3-jdk-21 \
-                        test --file=pom.xml
+                            --entrypoint snyk \
+                            -e SNYK_TOKEN=$SNYK_TOKEN \
+                            -v jenkins_home:/var/jenkins_home:ro \
+                            -w /var/jenkins_home/workspace/event-booking-pipeline \
+                            snyk/snyk:maven-3-jdk-21 \
+                            test --file=pom.xml
                     '''
                 }
             }
