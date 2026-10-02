@@ -3,8 +3,6 @@ pipeline {
 
     environment {
         SPRING_DATASOURCE_URL = 'jdbc:postgresql://event-booking-postgres:5432/eventbooking'
-        SPRING_DATASOURCE_USERNAME = 'eventuser'
-        SPRING_DATASOURCE_PASSWORD = 'eventpass'
         TESTCONTAINERS_RYUK_DISABLED = 'true'
     }
 
@@ -24,7 +22,15 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh './mvnw test'
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'event-booking-db',
+                        usernameVariable: 'DB_USERNAME',
+                        passwordVariable: 'DB_PASSWORD'
+                    )
+                ]) {
+                    sh './mvnw test'
+                }
             }
         }
 
@@ -77,72 +83,118 @@ pipeline {
             }
         }
         stage('Deploy') {
-
             steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'event-booking-db',
+                        usernameVariable: 'DB_USERNAME',
+                        passwordVariable: 'DB_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                        echo "Deploying event-booking to staging environment..."
 
-                sh '''
-                echo "Deploying event-booking to staging environment..."
+                        docker rm -f event-booking-staging 2>/dev/null || true
 
-                docker rm -f event-booking-staging 2>/dev/null || true
+                        docker run -d \
+                            --name event-booking-staging \
+                            --network event-booking_default \
+                            -p 8082:8080 \
+                            -e SPRING_DATASOURCE_URL=jdbc:postgresql://event-booking-postgres:5432/eventbooking \
+                            -e SPRING_DATASOURCE_USERNAME="$DB_USERNAME" \
+                            -e SPRING_DATASOURCE_PASSWORD="$DB_PASSWORD" \
+                            -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
+                            event-booking:${BUILD_NUMBER}
 
-                docker run -d \
-                    --name event-booking-staging \
-                    --network event-booking_default \
-                    -p 8082:8080 \
-                    -e SPRING_DATASOURCE_URL=jdbc:postgresql://event-booking-postgres:5432/eventbooking \
-                    -e SPRING_DATASOURCE_USERNAME=eventuser \
-                    -e SPRING_DATASOURCE_PASSWORD=eventpass \
-                    -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
-                    event-booking:${BUILD_NUMBER}
+                        echo "Waiting for staging application to become healthy..."
 
+                        HEALTHY=false
 
-                echo "Waiting for application startup..."
+                        for i in $(seq 1 12); do
+                            if curl -f --silent --show-error \
+                                http://event-booking-staging:8080/actuator/health; then
 
-                sleep 20
+                                echo ""
+                                echo "Staging health check PASSED."
+                                HEALTHY=true
+                                break
+                            fi
 
-                docker ps --filter name=event-booking-staging
+                            echo "Staging not ready yet - attempt $i/12"
+                            sleep 5
+                        done
 
-                docker logs --tail 50 event-booking-staging
-                '''
+                        if [ "$HEALTHY" != "true" ]; then
+                            echo "Staging health check FAILED."
+                            docker logs --tail 100 event-booking-staging
+                            exit 1
+                        fi
+
+                        echo "Staging deployment completed successfully."
+                    '''
+                }
             }
         }
         stage('Release') {
             steps {
-                sh '''
-                    echo "Creating production release..."
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'event-booking-prod-db',
+                        usernameVariable: 'PROD_DB_USERNAME',
+                        passwordVariable: 'PROD_DB_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                        echo "Creating production release..."
 
-                    RELEASE_VERSION="release-${BUILD_NUMBER}"
+                        RELEASE_VERSION="release-${BUILD_NUMBER}"
 
-                    echo "Release version: ${RELEASE_VERSION}"
+                        echo "Release version: ${RELEASE_VERSION}"
 
-                    docker tag \
-                        event-booking:${BUILD_NUMBER} \
-                        event-booking:${RELEASE_VERSION}
+                        docker tag \
+                            event-booking:${BUILD_NUMBER} \
+                            event-booking:${RELEASE_VERSION}
 
-                    docker rm -f event-booking-production 2>/dev/null || true
+                        docker rm -f event-booking-production 2>/dev/null || true
 
-                    docker run -d \
-                        --name event-booking-production \
-                        --network event-booking_default \
-                        -p 8083:8080 \
-                        -e SPRING_DATASOURCE_URL=jdbc:postgresql://event-booking-postgres:5432/eventbooking \
-                        -e SPRING_DATASOURCE_USERNAME=eventuser \
-                        -e SPRING_DATASOURCE_PASSWORD=eventpass \
-                        -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
-                        -e SPRING_PROFILES_ACTIVE=production \
-                        event-booking:${RELEASE_VERSION}
+                        docker run -d \
+                            --name event-booking-production \
+                            --network event-booking_default \
+                            -p 8083:8080 \
+                            -e SPRING_DATASOURCE_URL=jdbc:postgresql://event-booking-postgres-production:5432/eventbooking_prod \
+                            -e SPRING_DATASOURCE_USERNAME="$PROD_DB_USERNAME" \
+                            -e SPRING_DATASOURCE_PASSWORD="$PROD_DB_PASSWORD" \
+                            -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
+                            -e SPRING_PROFILES_ACTIVE=production \
+                            event-booking:${RELEASE_VERSION}
 
-                    echo "Waiting for production application..."
-                    sleep 20
+                        echo "Waiting for production application to become healthy..."
 
-                    docker ps --filter name=event-booking-production
+                        HEALTHY=false
 
-                    docker inspect \
-                        -f '{{.State.Running}}' \
-                        event-booking-production | grep true
+                        for i in $(seq 1 12); do
+                            if curl -f --silent --show-error \
+                                http://event-booking-production:8080/actuator/health; then
 
-                    echo "Production release ${RELEASE_VERSION} deployed successfully."
-                '''
+                                echo ""
+                                echo "Production health check PASSED."
+                                HEALTHY=true
+                                break
+                            fi
+
+                            echo "Production not ready yet - attempt $i/12"
+                            sleep 5
+                        done
+
+                        if [ "$HEALTHY" != "true" ]; then
+                            echo "Production health check FAILED."
+                            docker logs --tail 100 event-booking-production
+                            exit 1
+                        fi
+
+                        echo "Production release ${RELEASE_VERSION} deployed successfully."
+                    '''
+                }
             }
         }
         stage('Monitoring Verification') {
