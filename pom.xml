@@ -24,6 +24,10 @@
         <jacoco.version>0.8.13</jacoco.version>
         <jackson-bom.version>3.1.6</jackson-bom.version>
         <logback.version>1.6.3</logback.version>
+
+        <sonar.coverage.jacoco.xmlReportPaths>
+            ${project.build.directory}/site/jacoco/jacoco.xml
+        </sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
 
@@ -156,26 +160,20 @@
 
                     <execution>
                         <id>prepare-agent</id>
-
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
-
                     </execution>
 
-
                     <execution>
-                        <id>report</id>
-                        <phase>verify</phase>
-
+                        <id>jacoco-report</id>
+                        <phase>test</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
-
                     </execution>
 
                 </executions>
-
             </plugin>
 
 

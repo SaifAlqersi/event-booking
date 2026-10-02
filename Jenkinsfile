@@ -36,7 +36,8 @@ pipeline {
                             ./mvnw sonar:sonar \
                             -Dsonar.projectKey=event-booking \
                             -Dsonar.projectName=event-booking \
-                            -Dsonar.login=$SONAR_TOKEN
+                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+                            -Dsonar.token=$SONAR_TOKEN
                         '''
                     }
                 }
