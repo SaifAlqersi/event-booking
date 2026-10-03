@@ -412,7 +412,25 @@ pipeline {
                     # 1. Start Prometheus and Grafana
                     echo "Starting Prometheus and Grafana..."
 
-                    docker compose up -d prometheus grafana
+                    if docker inspect event-booking-prometheus >/dev/null 2>&1; then
+                        echo "Starting existing Prometheus container..."
+                        docker start event-booking-prometheus >/dev/null 2>&1 || true
+                    else
+                        echo "Prometheus container does not exist."
+                        echo "Monitoring infrastructure must be created before verification."
+                        exit 1
+                    fi
+
+                    if docker inspect event-booking-grafana >/dev/null 2>&1; then
+                        echo "Starting existing Grafana container..."
+                        docker start event-booking-grafana >/dev/null 2>&1 || true
+                    else
+                        echo "Grafana container does not exist."
+                        echo "Monitoring infrastructure must be created before verification."
+                        exit 1
+                    fi
+
+                    echo "Prometheus and Grafana are running."
 
                     # 2. Verify Prometheus is Ready
                     echo "Waiting for Prometheus..."
