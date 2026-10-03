@@ -1,0 +1,11 @@
+groups:
+  - name: event-booking-alerts
+    rules:
+      - alert: EventBookingProductionDown
+        expr: up{job="event-booking"} == 0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Event Booking production is down"
+          description: "Prometheus cannot scrape the production application for more than 15 seconds."

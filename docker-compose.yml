@@ -59,19 +59,20 @@ services:
 
   prometheus:
     image: prom/prometheus
-
     container_name: event-booking-prometheus
 
     ports:
       - "9090:9090"
 
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus-rules.yml:/etc/prometheus/prometheus-rules.yml:ro
+
+    restart: unless-stopped
 
 
   grafana:
     image: grafana/grafana
-
     container_name: event-booking-grafana
 
     ports:
@@ -79,6 +80,8 @@ services:
 
     depends_on:
       - prometheus
+
+    restart: unless-stopped
 
 
 volumes:
